@@ -5,6 +5,7 @@ async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+//scorll the page
 async function autoScroll(page) {
     await page.evaluate(async () => {
         await new Promise((resolve, reject) => {
@@ -24,10 +25,13 @@ async function autoScroll(page) {
 }
 
 async function main(keyword, number) {
+    //the time cost of getting each of images about 261 ms
     let sleepTime = number * 261
     const browser = await puppeteer.launch({ headless: false })
     const page = await browser.newPage()
     await page.goto(`https://unsplash.com/s/photos/${keyword}?orientation=landscape`)
+
+    //build a folder to store images
     const downloadPath = path.resolve('./' + keyword);
 
     await page._client.send('Page.setDownloadBehavior', {
@@ -39,14 +43,19 @@ async function main(keyword, number) {
 
     let buttons = ''
     let img_url = ','
+
+    //get image download link every 5 seconds
     let intervalID = setInterval(async () => {
         buttons = await page.$$eval('a[data-test="non-sponsored-photo-download-button"]', (items) => {
             return items.map((a) => a.getAttribute("href"))
         })
         img_url += buttons + ','
     }, 5000)
+
+    //wait to get download link
     await sleep(sleepTime)
     clearInterval(intervalID)
+
     img_url_list = img_url.split(',')
     console.log(img_url_list, img_url_list.length)
     for (url of img_url_list) {
